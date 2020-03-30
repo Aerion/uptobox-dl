@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using CommandLine;
 
@@ -30,6 +31,8 @@ namespace UptoboxDl
                 }
             }
         }
+
+        private static HttpClient _httpClient = new HttpClient {Timeout = TimeSpan.FromSeconds(5)};
 
         static async Task Main(string[] args)
         {
@@ -60,7 +63,7 @@ namespace UptoboxDl
                 Console.WriteLine($"Filecode: {fileCode}");
             }
 
-            var client = new UptoboxClient.Client(fileCode, opts.UserToken);
+            var client = new UptoboxClient.Client(fileCode, opts.UserToken, customHttpClient: _httpClient);
 
             var waitingToken = await client.GetWaitingTokenAsync().ConfigureAwait(false);
             var waitingTokenDelay = TimeSpan.FromSeconds(waitingToken.Delay + 1);

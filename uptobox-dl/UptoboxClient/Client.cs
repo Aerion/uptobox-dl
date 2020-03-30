@@ -67,12 +67,20 @@ namespace UptoboxDl.UptoboxClient
             return new Uri(data.GetProperty("dlLink").GetString(), UriKind.Absolute);
         }
 
-        private async Task<JsonElement> GetAsync(string url, CancellationToken ct = default)
+        private async Task<JsonElement> GetAsync(string url, CancellationToken ct = default, bool retryOnTimeout = true)
         {
-            var response = await _client.GetAsync(url, ct).ConfigureAwait(false);
-            var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+            try
+            {
+                var response = await _client.GetAsync(url, ct).ConfigureAwait(false);
+                var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
 
-            return DeserializeJsonElementFromStream(stream);
+                return DeserializeJsonElementFromStream(stream);
+            }
+            catch (TimeoutException)
+            {
+                // Retry once on timeout error
+                return await GetAsync(url, ct, false);
+            }
         }
 
         private async Task<T> GetAsync<T>(string url, CancellationToken ct = default)
