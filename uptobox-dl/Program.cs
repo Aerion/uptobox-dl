@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace uptobox_dl
+namespace UptoboxDl
 {
     class Program
     {
