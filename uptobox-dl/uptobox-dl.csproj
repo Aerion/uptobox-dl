@@ -6,4 +6,8 @@
         <RootNamespace>UptoboxDl</RootNamespace>
     </PropertyGroup>
 
+    <ItemGroup>
+      <PackageReference Include="CommandLineParser" Version="2.7.82" />
+    </ItemGroup>
+
 </Project>
