@@ -69,7 +69,7 @@ namespace UptoboxDl.Tests
             var client = new Client("fileCode", "userToken", Hostname, false, mockHttp.ToHttpClient());
 
             var downloadLink = await client.GetDownloadLinkAsync(new WaitingToken() {Token = "ok"});
-            Assert.AreEqual("[DL_LINK]", downloadLink);
+            Assert.AreSame("[DL_LINK]", downloadLink);
         }
     }
 }

@@ -54,30 +54,30 @@ namespace UptoboxDl.UptoboxClient
                 url += $"&password={password}";
             }
 
-            return await GetAsync<WaitingToken>(url, cancellationToken);
+            return await GetAsync<WaitingToken>(url, cancellationToken).ConfigureAwait(false);
         }
 
         /// https://docs.uptobox.com/?javascript#get-the-download-link
-        public async Task<string> GetDownloadLinkAsync(WaitingToken waitingToken,
+        public async Task<Uri> GetDownloadLinkAsync(WaitingToken waitingToken,
             CancellationToken cancellationToken = default)
         {
             var url = $"link?token={_userToken}&file_code={_fileCode}&waitingToken={waitingToken.Token}";
-            var data = await GetAsync(url, cancellationToken);
+            var data = await GetAsync(url, cancellationToken).ConfigureAwait(false);
 
-            return data.GetProperty("dlLink").GetString();
+            return new Uri(data.GetProperty("dlLink").GetString(), UriKind.Absolute);
         }
 
         private async Task<JsonElement> GetAsync(string url, CancellationToken ct = default)
         {
-            var response = await _client.GetAsync(url, ct);
-            var stream = await response.Content.ReadAsStreamAsync();
+            var response = await _client.GetAsync(url, ct).ConfigureAwait(false);
+            var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
 
             return DeserializeJsonElementFromStream(stream);
         }
 
         private async Task<T> GetAsync<T>(string url, CancellationToken ct = default)
         {
-            var elt = await GetAsync(url, ct);
+            var elt = await GetAsync(url, ct).ConfigureAwait(false);
             return JsonSerializer.Deserialize<T>(elt.GetRawText(), JsonSerializerOptions);
         }
 
