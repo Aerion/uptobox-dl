@@ -48,8 +48,10 @@ namespace UptoboxDl.UptoboxClient
         /// https://docs.uptobox.com/?javascript#get-a-waiting-token
         /// <summary>
         /// Get waiting token for the filecode.
-        /// Warning: if the resulting <c>WaitingToken.Token</c> is null, it means that the caller must wait <c>WaitingToken.Delay</c>
+        /// Note: if the resulting <c>WaitingToken.Token</c> is null, it means that the caller must wait <c>WaitingToken.Delay</c>
         /// and then call this method again with the same parameters.
+        /// Note: If the resulting <c>WaitingToken.Delay</c> is equal to zero, it means that token is already valid and the
+        /// caller must call <c>GetDownloadLink</c> 
         /// </summary>
         public async Task<WaitingToken> GetWaitingTokenAsync(string password = null,
             CancellationToken cancellationToken = default)

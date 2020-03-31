@@ -87,6 +87,10 @@ namespace UptoboxDl
         private static async Task<WaitingToken> GetValidWaitingTokenAsync(Client client)
         {
             var waitingToken = await RetryOnFailure(() => client.GetWaitingTokenAsync()).ConfigureAwait(false);
+            if (waitingToken.Delay == 0)
+            {
+                return waitingToken;
+            }
             var waitingTokenDelay = TimeSpan.FromSeconds(waitingToken.Delay + 1);
 
             Console.WriteLine(
