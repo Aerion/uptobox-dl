@@ -23,7 +23,11 @@ Got waiting token, awaiting for 00:25:42 - until 3:47:55 PM
 ```
 
 ## Usage
+
 `./uptobox-dl -t <my_user_token> [my_links...]`
+
+Go to [latest release](https://github.com/Aerion/uptobox-dl/releases/latest), download the .tar.gz and extract it, run the above command.
+
 ```
 ./uptobox-dl --help
 uptobox-dl 1.0.0
