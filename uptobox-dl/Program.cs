@@ -20,19 +20,17 @@ namespace UptoboxDl
             public string UserToken { get; set; }
 
             [Value(0, Required = false, HelpText = "Uptobox links to download")]
-            public IEnumerable<string> Links { get; set; }
+            public IReadOnlyList<string> Links { get; set; }
 
             public void Dump(TextWriter tw)
             {
-                foreach (var prop in typeof(Options).GetProperties())
-                {
-                    var val = prop.GetValue(this)?.ToString() ?? "null";
-                    tw.WriteLine($"{prop.Name}: {val}");
-                }
+                tw.WriteLine($"{nameof(Verbose)}: {Verbose}");
+                tw.WriteLine($"{nameof(UserToken)}: {UserToken}");
+                tw.WriteLine($"{nameof(Links)}: {string.Join(" ", Links)}");
             }
         }
 
-        private static HttpClient _httpClient = new HttpClient {Timeout = TimeSpan.FromSeconds(5)};
+        private static readonly HttpClient HttpClient = new HttpClient {Timeout = TimeSpan.FromSeconds(5)};
 
         static async Task Main(string[] args)
         {
@@ -51,6 +49,7 @@ namespace UptoboxDl
             foreach (var link in opts.Links)
             {
                 await ProcessLink(link, opts).ConfigureAwait(false);
+                Console.WriteLine();
             }
         }
 
@@ -63,17 +62,18 @@ namespace UptoboxDl
                 Console.WriteLine($"Filecode: {fileCode}");
             }
 
-            var client = new UptoboxClient.Client(fileCode, opts.UserToken, customHttpClient: _httpClient);
+            var client = new UptoboxClient.Client(fileCode, opts.UserToken, customHttpClient: HttpClient);
 
-            var waitingToken = await client.GetWaitingTokenAsync().ConfigureAwait(false);
+            var waitingToken = await RetryOnFailure(() => client.GetWaitingTokenAsync()).ConfigureAwait(false);
             var waitingTokenDelay = TimeSpan.FromSeconds(waitingToken.Delay + 1);
 
             Console.WriteLine(
-                $"Got waiting token, awaiting for {waitingTokenDelay} - until {DateTime.Now.Add(-waitingTokenDelay).ToLongTimeString()}");
+                $"Got waiting token, awaiting for {waitingTokenDelay} - until {DateTime.Now.Add(waitingTokenDelay).ToLongTimeString()}");
 
             await Task.Delay(waitingTokenDelay).ConfigureAwait(false);
 
-            var downloadLink = await client.GetDownloadLinkAsync(waitingToken).ConfigureAwait(false);
+            var downloadLink =
+                await RetryOnFailure(() => client.GetDownloadLinkAsync(waitingToken)).ConfigureAwait(false);
             var outputFilename = Path.GetFileName(downloadLink.ToString());
             if (opts.Verbose)
             {
@@ -81,6 +81,22 @@ namespace UptoboxDl
             }
 
             await DownloadFile(downloadLink, outputFilename).ConfigureAwait(false);
+            Console.WriteLine($"Downloaded {outputFilename}");
+        }
+
+        private static async Task<T> RetryOnFailure<T>(Func<Task<T>> task)
+        {
+            try
+            {
+                return await task();
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                Console.Error.WriteLine($"Caught exception - retrying once: {ex}");
+                Console.ResetColor();
+                return await task();
+            }
         }
 
         private static async Task DownloadFile(Uri link, string filename)
