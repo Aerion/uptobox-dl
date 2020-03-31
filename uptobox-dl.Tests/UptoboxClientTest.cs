@@ -62,14 +62,14 @@ namespace UptoboxDl.Tests
     ""statusCode"": 0,
     ""message"": ""Success"",
     ""data"": {
-        ""dlLink"": ""[DL_LINK]"",
+        ""dlLink"": ""http://dllink/foo.bar"",
     }
 }
 ");
             var client = new Client("fileCode", "userToken", Hostname, false, mockHttp.ToHttpClient());
 
             var downloadLink = await client.GetDownloadLinkAsync(new WaitingToken() {Token = "ok"});
-            Assert.AreSame("[DL_LINK]", downloadLink);
+            Assert.AreEqual("http://dllink/foo.bar", downloadLink.ToString());
         }
     }
 }
