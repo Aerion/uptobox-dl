@@ -46,13 +46,12 @@ namespace UptoboxDl.UptoboxClient
         }
 
         /// https://docs.uptobox.com/?javascript#get-a-waiting-token
-        public Task<WaitingToken> GetWaitingTokenAsync(CancellationToken cancellationToken = default)
-        {
-            return GetWaitingTokenAsync(null, cancellationToken);
-        }
-
-        /// https://docs.uptobox.com/?javascript#get-a-waiting-token
-        public async Task<WaitingToken> GetWaitingTokenAsync(string password,
+        /// <summary>
+        /// Get waiting token for the filecode.
+        /// Warning: if the resulting <c>WaitingToken.Token</c> is null, it means that the caller must wait <c>WaitingToken.Delay</c>
+        /// and then call this method again with the same parameters.
+        /// </summary>
+        public async Task<WaitingToken> GetWaitingTokenAsync(string password = null,
             CancellationToken cancellationToken = default)
         {
             var uri = GetUri("link", $"token={_userToken}", $"file_code={_fileCode}",

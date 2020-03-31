@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using CommandLine;
+using UptoboxDl.UptoboxClient;
 
 namespace UptoboxDl
 {
@@ -66,17 +67,11 @@ namespace UptoboxDl
             }
 
             var debugWriter = opts.Debug ? Console.Out : null;
-            var client = new UptoboxClient.Client(fileCode, opts.UserToken, customHttpClient: HttpClient,
+            var client = new Client(fileCode, opts.UserToken, customHttpClient: HttpClient,
                 debugWriter: debugWriter);
 
-            var waitingToken = await RetryOnFailure(() => client.GetWaitingTokenAsync()).ConfigureAwait(false);
-            var waitingTokenDelay = TimeSpan.FromSeconds(waitingToken.Delay + 1);
 
-            Console.WriteLine(
-                $"Got waiting token, awaiting for {waitingTokenDelay} - until {DateTime.Now.Add(waitingTokenDelay).ToLongTimeString()}");
-
-            await Task.Delay(waitingTokenDelay).ConfigureAwait(false);
-
+            var waitingToken = await GetValidWaitingTokenAsync(client);
             var downloadLink =
                 await RetryOnFailure(() => client.GetDownloadLinkAsync(waitingToken)).ConfigureAwait(false);
             var outputFilename = Path.GetFileName(downloadLink.ToString());
@@ -87,6 +82,24 @@ namespace UptoboxDl
 
             await DownloadFile(downloadLink, outputFilename).ConfigureAwait(false);
             Console.WriteLine($"Downloaded {outputFilename}");
+        }
+
+        private static async Task<WaitingToken> GetValidWaitingTokenAsync(Client client)
+        {
+            var waitingToken = await RetryOnFailure(() => client.GetWaitingTokenAsync()).ConfigureAwait(false);
+            var waitingTokenDelay = TimeSpan.FromSeconds(waitingToken.Delay + 1);
+
+            Console.WriteLine(
+                $"Got waiting token, awaiting for {waitingTokenDelay} - until {DateTime.Now.Add(waitingTokenDelay).ToLongTimeString()}");
+
+            await Task.Delay(waitingTokenDelay).ConfigureAwait(false);
+
+            if (waitingToken.Token == null)
+            {
+                return await GetValidWaitingTokenAsync(client);
+            }
+
+            return waitingToken;
         }
 
         private static async Task<T> RetryOnFailure<T>(Func<Task<T>> task)
