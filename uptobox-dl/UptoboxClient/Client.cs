@@ -21,6 +21,7 @@ namespace UptoboxDl.UptoboxClient
         private readonly string _fileCode;
         private readonly HttpClient _client;
         private readonly string _userToken;
+        private readonly TextWriter _debugWriter;
         private readonly Uri _baseAddress;
 
         /// <summary>
@@ -31,12 +32,14 @@ namespace UptoboxDl.UptoboxClient
         /// <param name="hostname">Uptobox domain, should be uptobox.com</param>
         /// <param name="useHttps">Set to false to use http instead of https</param>
         /// <param name="customHttpClient">Custom HttpClient to use</param>
+        /// <param name="debugWriter">Print to given writer debug information</param>
         public Client(string fileCode, string userToken, string hostname = "uptobox.com", bool useHttps = true,
-            HttpClient customHttpClient = null)
+            HttpClient customHttpClient = null, TextWriter debugWriter = null)
         {
             _userToken = userToken;
             _fileCode = fileCode;
             _client = customHttpClient ?? new HttpClient();
+            _debugWriter = debugWriter;
 
             var scheme = useHttps ? "https" : "http";
             _baseAddress = new Uri($"{scheme}://{hostname}");
@@ -70,6 +73,7 @@ namespace UptoboxDl.UptoboxClient
 
         private async Task<JsonElement> GetAsync(Uri uri, CancellationToken ct = default)
         {
+            DebugWriteLine($"Getting uri: {uri}");
             var response = await _client.GetAsync(uri, ct).ConfigureAwait(false);
             var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
 
@@ -82,10 +86,11 @@ namespace UptoboxDl.UptoboxClient
             return JsonSerializer.Deserialize<T>(elt.GetRawText(), JsonSerializerOptions);
         }
 
-        private static JsonElement DeserializeJsonElementFromStream(Stream stream)
+        private JsonElement DeserializeJsonElementFromStream(Stream stream)
         {
             using var sr = new StreamReader(stream);
             var strData = sr.ReadToEnd();
+            DebugWriteLine($"Deserialized data: {strData}");
             var data = JsonSerializer.Deserialize<ResponseBase>(strData, JsonSerializerOptions);
 
             if (InvalidStatusCodes.Contains(data.StatusCode))
@@ -119,6 +124,15 @@ namespace UptoboxDl.UptoboxClient
 
             builder.Query = queryBuilder.ToString();
             return builder.Uri;
+        }
+
+        /// <summary>
+        /// Write debug information to <see cref="_debugWriter"/> if it's defined.
+        /// Should be replaced with a proper logger, but will do the work for now.
+        /// </summary>
+        private void DebugWriteLine(string str)
+        {
+            _debugWriter?.WriteLine(str);
         }
     }
 

@@ -15,6 +15,9 @@ namespace UptoboxDl
             [Option('v', "verbose", Required = false, HelpText = "Set output to verbose messages.")]
             public bool Verbose { get; set; }
 
+            [Option('d', "debug", Required = false, HelpText = "Print debug data.")]
+            public bool Debug { get; set; }
+
             [Option('t', "token", Required = true,
                 HelpText = "Uptobox user token. See https://docs.uptobox.com/?javascript#how-to-find-my-api-token")]
             public string UserToken { get; set; }
@@ -62,7 +65,9 @@ namespace UptoboxDl
                 Console.WriteLine($"Filecode: {fileCode}");
             }
 
-            var client = new UptoboxClient.Client(fileCode, opts.UserToken, customHttpClient: HttpClient);
+            var debugWriter = opts.Debug ? Console.Out : null;
+            var client = new UptoboxClient.Client(fileCode, opts.UserToken, customHttpClient: HttpClient,
+                debugWriter: debugWriter);
 
             var waitingToken = await RetryOnFailure(() => client.GetWaitingTokenAsync()).ConfigureAwait(false);
             var waitingTokenDelay = TimeSpan.FromSeconds(waitingToken.Delay + 1);
