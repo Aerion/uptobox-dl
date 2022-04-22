@@ -41,7 +41,7 @@ Downloaded /tmp/myfile
 
 ```
 ./uptobox-dl --help
-uptobox-dl 1.0.0
+uptobox-dl 1.1.0
 Copyright (C) 2022 uptobox-dl
 
   -v, --verbose         Set output to verbose messages.
