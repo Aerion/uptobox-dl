@@ -12,6 +12,7 @@ The only dependency is .NET runtime >= 3.1, thus it can be run from Linux, Windo
 
 ## Example
 
+With multiple links
 ```
 $ ./uptobox-dl -t <my_user_token> https://uptobox.com/<filecode_1> https://uptostream.com/iframe/<filecode_2>
 Start processing https://uptobox.com/<filecode_1>
@@ -24,6 +25,14 @@ Start processing https://uptostream.com/iframe/<filecode_2>
 Got waiting token, awaiting for 00:25:42 - until 3:47:55 PM
 ```
 
+Specifying an output directory
+```
+$ ./uptobox-dl --output-directory /tmp -t <my_user_token> https://uptobox.com/<filecode>
+Start processing https://uptobox.com/<filecode>
+5B/5B: 100%
+Downloaded /tmp/myfile
+```
+
 ## Usage
 
 ### CLI
@@ -33,18 +42,23 @@ Got waiting token, awaiting for 00:25:42 - until 3:47:55 PM
 ```
 ./uptobox-dl --help
 uptobox-dl 1.0.0
+Copyright (C) 2022 uptobox-dl
 
-  -v, --verbose    Set output to verbose messages.
+  -v, --verbose         Set output to verbose messages.
 
-  -d, --debug      Print debug data.
+  -d, --debug           Print debug data.
 
-  -t, --token      Required. Uptobox user token. See https://docs.uptobox.com/?javascript#how-to-find-my-api-token
+  --output-directory    Output directory (defaults to the current working directory if unset)
 
-  --help           Display this help screen.
+  -t, --token           Required. Uptobox user token. See
+                        https://docs.uptobox.com/?javascript#how-to-find-my-api-
+                        token
 
-  --version        Display version information.
+  --help                Display this help screen.
 
-  value pos. 0     Uptobox links to download
+  --version             Display version information.
+
+  value pos. 0          Uptobox links to download
 ```
 
 #### Why do I need a user token?

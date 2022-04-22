@@ -19,6 +19,9 @@ namespace UptoboxDl
             [Option('d', "debug", Required = false, HelpText = "Print debug data.")]
             public bool Debug { get; set; }
 
+            [Option("output-directory", Required = false, HelpText = "Output directory (defaults to the current working directory if unset)")]
+            public string OutputDirectory { get; set; }
+
             [Option('t', "token", Required = true,
                 HelpText = "Uptobox user token. See https://docs.uptobox.com/?javascript#how-to-find-my-api-token")]
             public string UserToken { get; set; }
@@ -34,7 +37,7 @@ namespace UptoboxDl
             }
         }
 
-        private static readonly HttpClient HttpClient = new HttpClient {Timeout = TimeSpan.FromSeconds(5)};
+        private static readonly HttpClient HttpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
 
         static async Task Main(string[] args)
         {
@@ -75,6 +78,11 @@ namespace UptoboxDl
             var downloadLink =
                 await RetryOnFailure(() => client.GetDownloadLinkAsync(waitingToken)).ConfigureAwait(false);
             var outputFilename = Path.GetFileName(downloadLink.ToString());
+            if (!string.IsNullOrWhiteSpace(opts.OutputDirectory))
+            {
+                outputFilename = Path.Combine(opts.OutputDirectory, outputFilename);
+            }
+
             if (opts.Verbose)
             {
                 Console.WriteLine($"Got download link: downloading {outputFilename} from {downloadLink}");
