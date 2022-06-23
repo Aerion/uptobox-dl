@@ -67,14 +67,14 @@ It allows you to speed up the time waiting for downloads (30min between each dow
 
 ### Run from release artifacts
 
-Install dotnet-runtime 3.1: https://dotnet.microsoft.com/download/dotnet/3.1
+Install the latest dotnet runtime: https://dotnet.microsoft.com/download/dotnet
 If you don't want to install the dotnet runtime, build from source as described in the next section and use `--self-contained true`. The resulting artifacts can be copied to the target machine and run without any dependency.
 
 Go to [latest release](https://github.com/Aerion/uptobox-dl/releases/latest), download the .tar.gz and extract it. You may run `./uptobox-dl --help` afterwards.
 
 ### Build from source
 
-Install dotnet-sdk 3.1: https://dotnet.microsoft.com/download/dotnet/3.1
+Install dotnet-sdk: https://dotnet.microsoft.com/download/dotnet
 
 ``` bash
 git clone git@github.com:Aerion/uptobox-dl.git
@@ -82,6 +82,6 @@ git clone git@github.com:Aerion/uptobox-dl.git
 # linux-x64 for "mainstream" linux, use win-x64 for Windows. See https://docs.microsoft.com/en-us/dotnet/core/rid-catalog#using-rids for the full list
 # use self-contained true if your target machine won't have .NET runtime installed, see https://docs.microsoft.com/en-us/dotnet/core/deploying/#publish-self-contained
 dotnet publish uptobox-dl/uptobox-dl.csproj -c Release -r linux-x64 # --self-contained true
-cd uptobox-dl/bin/Release/netcoreapp3.1/linux-x64
+cd uptobox-dl/bin/Release/*/linux-x64
 ./uptobox-dl --help
 ```
