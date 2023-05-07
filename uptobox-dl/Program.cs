@@ -37,7 +37,7 @@ namespace UptoboxDl
             }
         }
 
-        private static readonly HttpClient HttpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+        private static readonly HttpClient HttpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(1) };
 
         static async Task Main(string[] args)
         {

@@ -47,16 +47,17 @@ Downloaded /tmp/myfile
 
 ```
 ./uptobox-dl --help
-uptobox-dl 1.2.0
-Copyright (C) 2022 uptobox-dl
+uptobox-dl 1.2.1
+Copyright (C) 2023 uptobox-dl
 
   -v, --verbose         Set output to verbose messages.
 
   -d, --debug           Print debug data.
 
-  --output-directory    Output directory (defaults to the current working directory if unset)
+  --output-directory    Output directory (defaults to the current working
+                        directory if unset)
 
-  -t, --token           Uptobox user token. See
+  -t, --token           Required. Uptobox user token. See
                         https://docs.uptobox.com/?javascript#how-to-find-my-api-
                         token
 
