@@ -38,6 +38,7 @@ class Program
     }
 
     private static readonly HttpClient HttpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(1) };
+    private static Client Client;
 
     static async Task Main(string[] args)
     {
@@ -53,30 +54,57 @@ class Program
             Console.WriteLine();
         }
 
-        foreach (var link in opts.Links)
+        var debugWriter = opts.Debug ? Console.Out : null;
+        Client = new Client(opts.UserToken, customHttpClient: HttpClient,
+            debugWriter: debugWriter);
+
+        var (fileCodes, directFilesCount, folderCount) = await GetFileCodesFromUrls(opts.Links, opts.UserToken);
+        Console.WriteLine($"{fileCodes.Count} files to download (from {directFilesCount} direct links and {folderCount} folders)");
+
+        foreach (var fileCode in fileCodes)
         {
-            await RetryOnFailure(() => ProcessLink(link, opts));
+            await RetryOnFailure(() => ProcessLink(fileCode, opts));
             Console.WriteLine();
         }
     }
 
-    private static async Task ProcessLink(string link, Options opts)
+    private static async Task<(IReadOnlyList<string> fileCodes, int directFilesCount, int folderCount)> GetFileCodesFromUrls(IReadOnlyList<string> links, string userToken)
     {
-        Console.WriteLine($"Start processing {link}");
-        var fileCode = GetFileCode(link);
-        if (opts.Verbose)
+        var fileCodes = new List<string>();
+        var directFilesCount = 0;
+        var folderCount = 0;
+
+        foreach (var link in links)
         {
-            Console.WriteLine($"Filecode: {fileCode}");
+            var linkType = LinkParser.GetLinkType(link);
+            if (linkType == LinkParser.LinkType.DirectLink)
+            {
+                fileCodes.Add(LinkParser.ParseFileCodeFromDirectLink(link));
+                directFilesCount += 1;
+            }
+            else if (linkType == LinkParser.LinkType.Folder)
+            {
+                var (folder, hash) = LinkParser.ParseFolderHashFromLink(link);
+                var folderFileCodes = await Client.GetFolderFileCodes(folder, hash);
+                fileCodes.AddRange(folderFileCodes);
+                folderCount += 1;
+            }
+            else
+            {
+                throw new Exception("Unknown link format: " + link);
+            }
         }
 
-        var debugWriter = opts.Debug ? Console.Out : null;
-        var client = new Client(fileCode, opts.UserToken, customHttpClient: HttpClient,
-            debugWriter: debugWriter);
+        return (fileCodes, directFilesCount, folderCount);
+    }
 
+    private static async Task ProcessLink(string fileCode, Options opts)
+    {
+        Console.WriteLine($"Start processing {fileCode}");
 
-        var waitingToken = await GetValidWaitingTokenAsync(client);
+        var waitingToken = await GetValidWaitingTokenAsync(fileCode);
         var downloadLink =
-            await RetryOnFailure(() => client.GetDownloadLinkAsync(waitingToken)).ConfigureAwait(false);
+            await RetryOnFailure(() => Client.GetDownloadLinkAsync(fileCode, waitingToken)).ConfigureAwait(false);
         var outputFilename = Path.GetFileName(downloadLink.ToString());
         if (!string.IsNullOrWhiteSpace(opts.OutputDirectory))
         {
@@ -94,9 +122,9 @@ class Program
         Console.WriteLine($"Downloaded {outputFilename}");
     }
 
-    private static async Task<WaitingToken> GetValidWaitingTokenAsync(Client client)
+    private static async Task<WaitingToken> GetValidWaitingTokenAsync(string fileCode)
     {
-        var waitingToken = await RetryOnFailure(() => client.GetWaitingTokenAsync()).ConfigureAwait(false);
+        var waitingToken = await RetryOnFailure(() => Client.GetWaitingTokenAsync(fileCode)).ConfigureAwait(false);
         if (waitingToken.Delay == 0)
         {
             return waitingToken;
@@ -110,7 +138,7 @@ class Program
 
         if (waitingToken.Token == null)
         {
-            return await GetValidWaitingTokenAsync(client);
+            return await GetValidWaitingTokenAsync(fileCode);
         }
 
         return waitingToken;
@@ -154,7 +182,7 @@ class Program
 
         ph.HttpReceiveProgress += (_, args) =>
         {
-            Console.Write($"\r{args.BytesTransferred}B/{args.TotalBytes}B: {(double)args.BytesTransferred / args.TotalBytes}%");
+            Console.Write($"\r{args.BytesTransferred}B/{args.TotalBytes}B: {Math.Floor((decimal)(args.BytesTransferred * 100 / args.TotalBytes))}%");
         };
 
         var client = new HttpClient(ph);
@@ -162,11 +190,5 @@ class Program
         const int bufferSize = 8192;
         using var fs = new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize, true);
         await responseStream.CopyToAsync(fs);
-    }
-
-    private static string GetFileCode(string link)
-    {
-        // Simple implementation, let's assume that every link ends with the fileCode: https://uptobox.com/m5f0ce9h197j
-        return link.TrimEnd('/').Split('/')[^1];
     }
 }

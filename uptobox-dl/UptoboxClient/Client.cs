@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -17,7 +18,6 @@ public class Client
     private static readonly JsonSerializerOptions JsonSerializerOptions = new JsonSerializerOptions()
     { AllowTrailingCommas = true };
 
-    private readonly string _fileCode;
     private readonly HttpClient _client;
     private readonly string _userToken;
     private readonly TextWriter _debugWriter;
@@ -26,17 +26,15 @@ public class Client
     /// <summary>
     /// Wrapper around Uptobox API
     /// </summary>
-    /// <param name="fileCode">Filecode of the file to download https://docs.uptobox.com/?javascript#what-is-a-file-code</param>
     /// <param name="userToken">Token of the Uptobox account https://docs.uptobox.com/?javascript#how-to-find-my-api-token</param>
     /// <param name="hostname">Uptobox domain, should be uptobox.com</param>
     /// <param name="useHttps">Set to false to use http instead of https</param>
     /// <param name="customHttpClient">Custom HttpClient to use</param>
     /// <param name="debugWriter">Print to given writer debug information</param>
-    public Client(string fileCode, string userToken, string hostname = "uptobox.com", bool useHttps = true,
+    public Client(string userToken, string hostname = "uptobox.com", bool useHttps = true,
         HttpClient customHttpClient = null, TextWriter debugWriter = null)
     {
         _userToken = userToken;
-        _fileCode = fileCode;
         _client = customHttpClient ?? new HttpClient();
         _debugWriter = debugWriter;
 
@@ -52,23 +50,46 @@ public class Client
     /// Note: If the resulting <c>WaitingToken.Delay</c> is equal to zero, it means that token is already valid and the
     /// caller must call <c>GetDownloadLink</c>
     /// </summary>
-    public async Task<WaitingToken> GetWaitingTokenAsync(string password = null,
+    public async Task<WaitingToken> GetWaitingTokenAsync(string fileCode, string password = null,
         CancellationToken cancellationToken = default)
     {
-        var uri = GetUri("link", $"token={_userToken}", $"file_code={_fileCode}",
+        var uri = GetUri("link", $"token={_userToken}", $"file_code={fileCode}",
             password == null ? string.Empty : $"password={password}");
         return await GetAsync<WaitingToken>(uri, cancellationToken).ConfigureAwait(false);
     }
 
     /// https://docs.uptobox.com/?javascript#get-the-download-link
-    public async Task<Uri> GetDownloadLinkAsync(WaitingToken waitingToken,
+    public async Task<Uri> GetDownloadLinkAsync(string fileCode, WaitingToken waitingToken,
         CancellationToken cancellationToken = default)
     {
-        var uri = GetUri("link", $"token={_userToken}", $"file_code={_fileCode}",
+        var uri = GetUri("link", $"token={_userToken}", $"file_code={fileCode}",
             $"waitingToken={waitingToken.Token}");
         var data = await GetAsync(uri, cancellationToken).ConfigureAwait(false);
 
         return new Uri(data.GetProperty("dlLink").GetString());
+    }
+
+    /// <summary>
+    /// Get the file codes of all the links in a public folder.
+    /// The folder and hash params should be extracted from LinkParser.ParseFolderHashFromLink
+    /// </summary>
+    public async Task<IReadOnlyList<string>> GetFolderFileCodes(string folder, string hash)
+    {
+        const int limit = 100;
+        var fileCodes = new List<string>();
+
+        for (var offset = 0; ; offset += limit)
+        {
+            var uri = GetUri("user/public", $"folder={folder}", $"hash={hash}", $"limit={limit}", $"offset={offset}");
+            var folderResponse = await GetAsync<PublicFolder>(uri);
+            if (folderResponse.Items.Length == 0)
+            {
+                // No more items
+                return fileCodes;
+            }
+
+            fileCodes.AddRange(folderResponse.Items.Select(item => item.FileCode));
+        }
     }
 
     private async Task<JsonElement> GetAsync(Uri uri, CancellationToken ct = default)

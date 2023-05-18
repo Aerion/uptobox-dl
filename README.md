@@ -6,6 +6,11 @@ An Uptobox batch downloader. Uptobox allows, for free members, 30 min to wait be
 
 With `uptobox-dl`, you're able to download multiple uptobox/uptostream links without any other action other than grabbing the links and running `uptobox-dl`.
 
+You can use uptobox-dl on different links:
+
+- direct link: `https://uptobox.com/m5f0ce9h197j`
+- public folder link: `https://uptobox.com/user_public?hash=foobar&folder=barbar`
+
 *Note: Uptobox is a file hosting provider*.
 
 The only dependency is .NET runtime >= 3.1, thus it can be run from Linux, Windows, macOS.

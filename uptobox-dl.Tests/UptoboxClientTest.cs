@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using RichardSzalay.MockHttp;
@@ -28,9 +29,9 @@ namespace UptoboxDl.Tests
         ""waitingToken"": ""waitingToken""
     }
 }");
-            var client = new Client("fileCode", "userToken", Hostname, false, mockHttp.ToHttpClient());
+            var client = new Client("userToken", Hostname, false, mockHttp.ToHttpClient());
 
-            var token = await client.GetWaitingTokenAsync();
+            var token = await client.GetWaitingTokenAsync("fileCode");
             Assert.AreEqual("waitingToken", token.Token);
             Assert.AreEqual(30, token.Delay);
         }
@@ -46,9 +47,9 @@ namespace UptoboxDl.Tests
     ""message"": ""Invalid parameter"",
     ""data"": ""bad file code""
 }");
-            var client = new Client("fileCode", "userToken", Hostname, false, mockHttp.ToHttpClient());
+            var client = new Client("userToken", Hostname, false, mockHttp.ToHttpClient());
 
-            var ex = Assert.ThrowsAsync<ClientException>(async () => { await client.GetWaitingTokenAsync(); });
+            var ex = Assert.ThrowsAsync<ClientException>(async () => { await client.GetWaitingTokenAsync("fileCode"); });
             Assert.AreEqual(ex.Message, "bad file code");
         }
 
@@ -66,10 +67,61 @@ namespace UptoboxDl.Tests
     }
 }
 ");
-            var client = new Client("fileCode", "userToken", Hostname, false, mockHttp.ToHttpClient());
+            var client = new Client("userToken", Hostname, false, mockHttp.ToHttpClient());
 
-            var downloadLink = await client.GetDownloadLinkAsync(new WaitingToken() {Token = "ok"});
+            var downloadLink = await client.GetDownloadLinkAsync("fileCode", new WaitingToken() { Token = "ok" });
             Assert.AreEqual("http://dllink/foo.bar", downloadLink.ToString());
+        }
+
+        [Test]
+        public async Task GetFolderFileCodes()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            mockHttp.When($"http://{Hostname}/api/user/public?hash=myhash&folder=myfolder&limit=100&offset=0")
+                .Respond("application/json",
+                    @"{
+    ""statusCode"": 0,
+    ""message"": ""Success"",
+    ""data"": {
+        ""list"": [" + string.Join(",", Enumerable.Range(0, 100).Select(idx => @$"
+            {{
+                ""file_name"": ""name{idx}"",
+                ""file_code"": ""code{idx}""
+            }}")) + @"
+        ]
+    }
+}
+");
+            mockHttp.When($"http://{Hostname}/api/user/public?hash=myhash&folder=myfolder&limit=100&offset=100")
+                .Respond("application/json",
+                    @"{
+    ""statusCode"": 0,
+    ""message"": ""Success"",
+    ""data"": {
+        ""list"": [" + string.Join(",", Enumerable.Range(100, 23).Select(idx => @$"
+            {{
+                ""file_name"": ""name{idx}"",
+                ""file_code"": ""code{idx}""
+            }}")) + @"
+        ]
+    }
+}
+");
+            mockHttp.When($"http://{Hostname}/api/user/public?hash=myhash&folder=myfolder&limit=100&offset=200")
+                .Respond("application/json",
+                    @"{
+    ""statusCode"": 0,
+    ""message"": ""Success"",
+    ""data"": {
+        ""list"": []
+    }
+}
+");
+            var client = new Client("userToken", Hostname, false, mockHttp.ToHttpClient());
+
+            var fileCodes = await client.GetFolderFileCodes("myfolder", "myhash");
+            var expectedFileCodes = Enumerable.Range(0, 123).Select(idx => $"code{idx}");
+            Assert.That(fileCodes, Is.EquivalentTo(expectedFileCodes));
         }
     }
 }
