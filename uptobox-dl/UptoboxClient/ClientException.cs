@@ -1,27 +1,26 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace UptoboxDl.UptoboxClient
+namespace UptoboxDl.UptoboxClient;
+
+[Serializable]
+public class ClientException : Exception
 {
-    [Serializable]
-    public class ClientException : Exception
+    public ClientException()
     {
-        public ClientException()
-        {
-        }
+    }
 
-        public ClientException(string message) : base(message)
-        {
-        }
+    public ClientException(string message) : base(message)
+    {
+    }
 
-        public ClientException(string message, Exception inner) : base(message, inner)
-        {
-        }
+    public ClientException(string message, Exception inner) : base(message, inner)
+    {
+    }
 
-        protected ClientException(
-            SerializationInfo info,
-            StreamingContext context) : base(info, context)
-        {
-        }
+    protected ClientException(
+        SerializationInfo info,
+        StreamingContext context) : base(info, context)
+    {
     }
 }
