@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
 using System.Net.Http;
+using System.Net.Http.Handlers;
 using System.Threading.Tasks;
 using CommandLine;
 using UptoboxDl.UptoboxClient;
@@ -131,14 +131,20 @@ class Program
 
     private static async Task DownloadFile(Uri link, string filename)
     {
-        var wc = new WebClient();
+        var handler = new HttpClientHandler() { AllowAutoRedirect = true };
+        var ph = new ProgressMessageHandler(handler);
 
-        wc.DownloadProgressChanged += (sender, args) =>
+        ph.HttpReceiveProgress += (_, args) =>
         {
-            Console.Write($"\r{args.BytesReceived}B/{args.TotalBytesToReceive}B: {args.ProgressPercentage}%");
+            Console.Write($"\r{args.BytesTransferred}B/{args.TotalBytes}B: {(double)args.BytesTransferred / args.TotalBytes}%");
         };
 
-        await wc.DownloadFileTaskAsync(link, filename).ConfigureAwait(false);
+        var client = new HttpClient(ph);
+        using var responseStream = await client.GetStreamAsync(link);
+        const int bufferSize = 8192;
+        using var fs = new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize, true);
+        await responseStream.CopyToAsync(fs);
+
         Console.WriteLine();
     }
 
