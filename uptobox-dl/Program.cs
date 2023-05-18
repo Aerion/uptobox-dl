@@ -142,6 +142,7 @@ class Program
             Console.ForegroundColor = ConsoleColor.DarkYellow;
             Console.Error.WriteLine($"Caught exception - retrying once: {ex}");
             Console.ResetColor();
+            await Task.Delay(TimeSpan.FromMinutes(1));
             await task();
         }
     }
