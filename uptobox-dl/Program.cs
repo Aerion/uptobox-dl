@@ -55,7 +55,7 @@ class Program
 
         foreach (var link in opts.Links)
         {
-            await ProcessLink(link, opts).ConfigureAwait(false);
+            await RetryOnFailure(() => ProcessLink(link, opts));
             Console.WriteLine();
         }
     }
@@ -88,7 +88,9 @@ class Program
             Console.WriteLine($"Got download link: downloading {outputFilename} from {downloadLink}");
         }
 
-        await DownloadFile(downloadLink, outputFilename).ConfigureAwait(false);
+        await RetryOnFailure(() => DownloadFile(downloadLink, outputFilename));
+
+        Console.WriteLine();
         Console.WriteLine($"Downloaded {outputFilename}");
     }
 
@@ -129,6 +131,21 @@ class Program
         }
     }
 
+    private static async Task RetryOnFailure(Func<Task> task)
+    {
+        try
+        {
+            await task();
+        }
+        catch (Exception ex)
+        {
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.Error.WriteLine($"Caught exception - retrying once: {ex}");
+            Console.ResetColor();
+            await task();
+        }
+    }
+
     private static async Task DownloadFile(Uri link, string filename)
     {
         var handler = new HttpClientHandler() { AllowAutoRedirect = true };
@@ -144,8 +161,6 @@ class Program
         const int bufferSize = 8192;
         using var fs = new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize, true);
         await responseStream.CopyToAsync(fs);
-
-        Console.WriteLine();
     }
 
     private static string GetFileCode(string link)
