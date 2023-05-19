@@ -13,11 +13,9 @@ namespace UptoboxDl.UptoboxClient;
 
 public class Client
 {
-    private static readonly HashSet<int> InvalidStatusCodes = new HashSet<int>() { 7 };
-
+    private const int WaitingNeededStatusCode = 16;
     private static readonly JsonSerializerOptions JsonSerializerOptions = new JsonSerializerOptions()
     { AllowTrailingCommas = true };
-
     private readonly HttpClient _client;
     private readonly string _userToken;
     private readonly TextWriter _debugWriter;
@@ -114,7 +112,7 @@ public class Client
         DebugWriteLine($"Deserialized data: {strData}");
         var data = JsonSerializer.Deserialize<ResponseBase>(strData, JsonSerializerOptions);
 
-        if (InvalidStatusCodes.Contains(data.StatusCode))
+        if (data.StatusCode != 0 && data.StatusCode != WaitingNeededStatusCode)
         {
             throw new ClientException(data.Data.GetString());
         }
