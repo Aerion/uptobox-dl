@@ -20,7 +20,7 @@ The only dependency is .NET runtime >= 3.1, thus it can be run from Linux, Windo
 ### Pre-requisites
 
 * Download `uptobox-dl.exe`: go to [latest release](https://github.com/Aerion/uptobox-dl/releases/latest), download the .tar.gz and extract it
-* Preferred: Get a user token (see [Get a user token from Uptobox](#get-a-user-token-from-uptobox))
+* Get a user token (see [Get a user token from Uptobox](#get-a-user-token-from-uptobox))
 * You may run `./uptobox-dl --help` afterwards from a shell (cmd.exe/powershell in Windows)
 
 ### Examples
