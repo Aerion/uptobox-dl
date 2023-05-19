@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Handlers;
@@ -182,7 +183,15 @@ class Program
 
         ph.HttpReceiveProgress += (_, args) =>
         {
-            Console.Write($"\r{args.BytesTransferred}B/{args.TotalBytes}B: {Math.Floor((decimal)(args.BytesTransferred * 100 / args.TotalBytes))}%");
+            var transferredBytesString = ByteSizeLib.ByteSize.FromBytes(args.BytesTransferred).ToString("0.00", CultureInfo.CurrentCulture, true);
+            var totalBytesString = ByteSizeLib.ByteSize.FromBytes(args.TotalBytes.Value).ToString("0.00", CultureInfo.CurrentCulture, true);
+            var text = $"\r{transferredBytesString} / {totalBytesString}: {Math.Floor((decimal)(args.BytesTransferred * 100 / args.TotalBytes))}%";
+            Console.Write(text);
+            var padding = Console.WindowWidth - text.Length;
+            if (padding > 0)
+            {
+                Console.Write(new string(' ', padding));
+            }
         };
 
         var client = new HttpClient(ph);

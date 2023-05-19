@@ -11,6 +11,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="ByteSize" Version="2.1.1" />
       <PackageReference Include="CommandLineParser" Version="2.7.82" />
       <PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="5.2.9" />
     </ItemGroup>
