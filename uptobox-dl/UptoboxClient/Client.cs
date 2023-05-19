@@ -90,6 +90,13 @@ public class Client
         }
     }
 
+    public async Task<FileCodeInfo> GetFileCodeInfoAsync(string fileCode)
+    {
+        var uri = GetUri("link/info", $"fileCodes={fileCode}");
+        var fileInfos = await GetAsync<RemoteList<FileCodeInfo>>(uri);
+        return fileInfos.Items[0];
+    }
+
     private async Task<JsonElement> GetAsync(Uri uri, CancellationToken ct = default)
     {
         DebugWriteLine($"Getting uri: {uri}");

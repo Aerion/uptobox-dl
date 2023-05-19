@@ -103,14 +103,33 @@ class Program
     {
         Console.WriteLine($"Start processing {fileCode}");
 
-        var waitingToken = await GetValidWaitingTokenAsync(fileCode);
-        var downloadLink =
-            await RetryOnFailure(() => Client.GetDownloadLinkAsync(fileCode, waitingToken)).ConfigureAwait(false);
-        var outputFilename = Path.GetFileName(downloadLink.ToString());
+        var fileInfo = await RetryOnFailure(() => Client.GetFileCodeInfoAsync(fileCode));
+
+        var outputFilename = fileInfo.FileName;
         if (!string.IsNullOrWhiteSpace(opts.OutputDirectory))
         {
             outputFilename = Path.Combine(opts.OutputDirectory, outputFilename);
         }
+
+        if (File.Exists(outputFilename))
+        {
+            var fileSize = new FileInfo(outputFilename).Length;
+            if (fileSize == fileInfo.FileSize)
+            {
+                Console.WriteLine($"File {outputFilename} already exists and has same size, ignoring as it was probably already downloaded");
+                return;
+            }
+            else
+            {
+                var localSizeString = ByteSizeLib.ByteSize.FromBytes(fileSize).ToBinaryString();
+                var remoteSizeString = ByteSizeLib.ByteSize.FromBytes(fileInfo.FileSize).ToBinaryString();
+                Console.WriteLine($"File {outputFilename} already exists, will be overwritten as size are different: local {localSizeString}, uptobox {remoteSizeString}");
+            }
+        }
+
+        var waitingToken = await GetValidWaitingTokenAsync(fileCode);
+        var downloadLink =
+            await RetryOnFailure(() => Client.GetDownloadLinkAsync(fileCode, waitingToken)).ConfigureAwait(false);
 
         if (opts.Verbose)
         {
