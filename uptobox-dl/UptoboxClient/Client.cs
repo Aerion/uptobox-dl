@@ -121,6 +121,7 @@ public class Client
 
         if (data.StatusCode != 0 && data.StatusCode != WaitingNeededStatusCode)
         {
+            DebugWriteLine($"Status code: {data.StatusCode}");
             throw new ClientException(data.Data.GetString());
         }
 
