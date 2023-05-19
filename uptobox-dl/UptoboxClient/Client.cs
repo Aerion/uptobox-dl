@@ -13,7 +13,6 @@ namespace UptoboxDl.UptoboxClient;
 
 public class Client
 {
-    private const int WaitingNeededStatusCode = 16;
     private static readonly JsonSerializerOptions JsonSerializerOptions = new JsonSerializerOptions()
     { AllowTrailingCommas = true };
     private readonly HttpClient _client;
@@ -119,10 +118,11 @@ public class Client
         DebugWriteLine($"Deserialized data: {strData}");
         var data = JsonSerializer.Deserialize<ResponseBase>(strData, JsonSerializerOptions);
 
-        if (data.StatusCode != 0 && data.StatusCode != WaitingNeededStatusCode)
+        var statusCode = (StatusCode)data.StatusCode;
+        if (statusCode != StatusCode.Success && statusCode != StatusCode.Waiting_needed && statusCode != StatusCode.Data_unchanged && statusCode != StatusCode.Permission_granted && statusCode != StatusCode.You_need_to_wait_before_requesting_a_new_download_link)
         {
-            DebugWriteLine($"Status code: {data.StatusCode}");
-            throw new ClientException(data.Data.GetString());
+            DebugWriteLine($"Status code: {statusCode} ({data.StatusCode})");
+            throw new ClientException($"Error: {statusCode}");
         }
 
         return data.Data;
