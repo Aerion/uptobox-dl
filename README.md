@@ -13,7 +13,7 @@ You can use uptobox-dl on different links:
 
 *Note: Uptobox is a file hosting provider*.
 
-The only dependency is .NET runtime >= 3.1, thus it can be run from Linux, Windows, macOS.
+This is using .NET, so it can be run from Linux, Windows, macOS.
 
 ## Usage
 
