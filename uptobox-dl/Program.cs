@@ -203,8 +203,19 @@ class Program
         ph.HttpReceiveProgress += (_, args) =>
         {
             var transferredBytesString = ByteSizeLib.ByteSize.FromBytes(args.BytesTransferred).ToString("0.00", CultureInfo.CurrentCulture, true);
-            var totalBytesString = ByteSizeLib.ByteSize.FromBytes(args.TotalBytes.Value).ToString("0.00", CultureInfo.CurrentCulture, true);
-            var text = $"\r{transferredBytesString} / {totalBytesString}: {Math.Floor((decimal)(args.BytesTransferred * 100 / args.TotalBytes))}%";
+            string totalBytesString;
+            string percentageString;
+            if (args.TotalBytes.HasValue)
+            {
+                totalBytesString = ByteSizeLib.ByteSize.FromBytes(args.TotalBytes.Value).ToString("0.00", CultureInfo.CurrentCulture, true);
+                percentageString = Math.Floor((decimal)(args.BytesTransferred * 100 / args.TotalBytes.Value)).ToString();
+            }
+            else
+            {
+                totalBytesString = "unknown";
+                percentageString = "unknown";
+            }
+            var text = $"\r{transferredBytesString} / {totalBytesString}: {percentageString}%";
             Console.Write(text);
             var padding = Console.WindowWidth - text.Length;
             if (padding > 0)
